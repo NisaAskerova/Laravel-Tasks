@@ -10,15 +10,28 @@ class CategoryController extends Controller
 {
     public function index()
     {
-        $categories = Category::with('blogs')->paginate(3);
-        return $categories;
-        return view('categories.index', compact('categories'));
+        // Bloglar içərisində yalnız active = 1 olanları yükləyirik
+        $categories = Category::with(['blogs' => function ($query) {
+            $query->where('active', 1);
+        }])->paginate(3);
+    
+        // Hər bir kateqoriyada yalnız active = 1 olan bloglar olacaq
+        $activeBlogs = $categories->pluck('blogs')->flatten();
+    return $activeBlogs;
+        return view('categories.index', compact('activeBlogs', 'categories'));
     }
+    
     public function edit($id)
     {
-        $category = Category::findOrFail($id);
-        return view('categories.edit', compact('category'));
+        $category = Category::with('blogs')->findOrFail($id);
+    
+        // Collection ilə yalnız active = 1 olan blogları süzürük
+        // $activeBlogs = $category->blogs->where('active', 1);
+        //     return $activeBlogs;
+
+        return view('categories.edit', compact('activeBlogs'));
     }
+    
 
 
     public function update(Request $request, $id)
